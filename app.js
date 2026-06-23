@@ -81,6 +81,7 @@ function defaultTasks(date){
     const early=idx<6,second=idx<12,h445=early?1.75:2,hEnglish=early?1:second?1.25:1.5,culture=zeroCulture[idx%zeroCulture.length],politics=idx>=18,english=idx<zeroEnglish.length?zeroEnglish[idx]:(()=>{const k=idx-zeroEnglish.length,year=2010+(Math.floor(k/4)%11),passage=k%4+1;return `${year}英语一阅读第${passage}篇精读`;})(),objectiveCount=idx<24?8:idx<36?12:15,subjectiveCount=idx<12?1:idx<24?2:3,subjectiveHours=idx<12?.5:.75;
     const objectiveTitle=idx<36?`全稿客观题：同章${objectiveCount}项`:`全稿客观题二轮：错题${objectiveCount}项`;
     const rows=[["英语",`词汇：新词50个 + 间隔复习旧词`,"",.5,"新词只认核心义；旧词按软件到期量清零"],["354",`教材理解：${zero354[idx]}`,"",.75,"黄廖教材/系统课程为主，一只鱼笔记查漏；合书画结构，不抄原文"],["354",objectiveTitle,"",.5,"只用全稿PDF第16—149页；先遮答案口答，再核对并标记不会/模糊"],["354",`全稿简答题：同章${subjectiveCount}题`,"",subjectiveHours,idx<12?"只列定义—要点—例子三级骨架；使用PDF第150—261页":"限时手写；每点先观点再解释/举例，核对后压缩成答题骨架"],["445",zero445[idx],"",h445,"丸子引论主线60分→一只鱼引论/现外教/教心只补缺口→合书口述并手写1道简答"],["文化",`文化要略：${culture}`,"",.5,idx%2===0?"小题：5道填空；大题：列1题的背景—表现—影响/当代价值提纲":"小题：5道填空；闭卷复述昨日文化大题提纲"]];
+    if(idx>=6)rows.push(["354","古代汉语：断句与常用词","",.25,"文选朗读5分钟；断句/标点1小段；积累2个实词或虚词"]);
     if(politics)rows.push(["政治","政治基础/强化：当天章节","",.75,"听课只记框架，完成肖1000对应题并订正"]);
     rows.push(["英语",english,"",hEnglish,idx<12?"拆出主干、从句和非谓语；精翻2句":"先限时18分钟，再逐题定位并解释干扰项"],["复盘","当日闭卷回忆 + 到期背诵","",.5,"354和445各口述5分钟，按不会/模糊/会了评级"]);
     return scheduled(rows);
