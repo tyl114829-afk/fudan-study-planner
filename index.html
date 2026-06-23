@@ -25,6 +25,7 @@
       </div>
       <div class="top-actions">
         <button class="ghost-button" id="cultureDeckBtn">文化背诵库</button>
+        <button class="ghost-button sync-button" id="syncBtn"><span id="syncDot" class="sync-dot"></span><span id="syncButtonText">云同步</span></button>
         <button class="icon-button" id="themeToggle" title="切换深浅主题" aria-label="切换深浅主题">◐</button>
         <button class="ghost-button" id="exportBtn">导出备份</button>
         <label class="ghost-button file-label">导入备份<input id="importInput" type="file" accept="application/json" /></label>
@@ -211,7 +212,28 @@
     </div>
   </dialog>
 
+  <dialog id="syncDialog" class="sync-dialog">
+    <div class="sync-shell">
+      <div class="dialog-head"><div><p class="eyebrow">CLOUD SYNC</p><h2>电脑与手机同步</h2></div><button type="button" id="closeSyncDialog" class="icon-button">×</button></div>
+      <div id="syncUnavailable" class="sync-message" hidden>云端尚未配置完成。</div>
+      <div id="syncSignedOut">
+        <p class="dialog-tip">在电脑和iPhone使用同一个账号。密码直接发送给 Supabase Auth，不会写进计划或GitHub。</p>
+        <label>邮箱<input id="syncEmail" type="email" autocomplete="email" placeholder="你的邮箱" /></label>
+        <label>密码<input id="syncPassword" type="password" autocomplete="current-password" minlength="8" placeholder="至少8位" /></label>
+        <div class="dialog-actions"><button class="ghost-button" id="syncSignupBtn">首次注册</button><button class="primary-button" id="syncLoginBtn">登录并连接</button></div>
+      </div>
+      <div id="syncSignedIn" hidden>
+        <div class="sync-account"><div><span class="muted">已登录</span><strong id="syncAccountEmail"></strong></div><button class="text-button danger" id="syncLogoutBtn">退出同步账号</button></div>
+        <div id="syncConflict" class="sync-conflict" hidden><strong>首次连接需要选择基准</strong><p>为防止误覆盖，请选择保留电脑数据或下载云端数据。</p><div class="dialog-actions"><button class="ghost-button" id="syncPullBtn">使用云端数据</button><button class="primary-button" id="syncPushBtn">使用本机数据</button></div></div>
+        <div id="syncReady" class="sync-ready" hidden><strong id="syncReadyTitle">同步正常</strong><span id="syncLastTime">—</span><div class="sync-manual"><button class="ghost-button" id="syncManualPullBtn">立即下载</button><button class="ghost-button" id="syncManualPushBtn">立即上传</button></div></div>
+      </div>
+      <p id="syncMessage" class="sync-message"></p>
+    </div>
+  </dialog>
+
   <script src="culture-data.js"></script>
   <script src="app.js"></script>
+  <script src="sync-config.js"></script>
+  <script src="sync.js"></script>
 </body>
 </html>

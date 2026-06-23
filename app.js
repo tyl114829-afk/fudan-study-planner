@@ -55,7 +55,7 @@ function loadData(){
 function normalizeData(saved,base={ schemaVersion:4, days:{}, reviewUnits:[], settings:{dailyTarget:8, weeklyTarget:50, examDate:"2026-12-19", theme:"light", autoRollover:true,morningStart:"08:30",afternoonStart:"13:30",eveningStart:"19:00",breakMinutes:20}, lastDate:todayISO(), lastAutoRollDate:todayISO() }){
   const oldVersion=Number(saved.schemaVersion||0),legacy=Object.keys(saved||{}).length&&oldVersion<3, merged=Object.assign({},base,saved); merged.settings=Object.assign({},base.settings,saved.settings||{}); merged.days=merged.days||{}; merged.reviewUnits=merged.reviewUnits||[]; merged.lastAutoRollDate=merged.lastAutoRollDate||todayISO(); merged.schemaVersion=4;if(legacy)merged.needsPipelineMigration=true;if(Object.keys(saved||{}).length&&oldVersion<4)merged.needsZeroReset=true;return merged;
 }
-function saveData(){ data.lastDate = selectedDate; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); flashSaved(); }
+function saveData(){ data.lastDate = selectedDate;if(!globalThis.cloudSyncApplying)data.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY, JSON.stringify(data));flashSaved();if(!globalThis.cloudSyncApplying)globalThis.cloudSync?.schedulePush?.(); }
 function phaseFor(date){ return phases.find(p => date >= p.start && date <= p.end) || phases[phases.length - 1]; }
 function priorityFor(subject){ return subject==="354"||subject==="445"?3:subject==="文化"||subject==="英语"||subject==="政治"?2:1; }
 function toTask(row){ return { id:uid(), subject:row[0], title:row[1], time:row[2], hours:Number(row[3]), deliverable:row[4] || "", priority:priorityFor(row[0]), locked:false, done:false }; }
