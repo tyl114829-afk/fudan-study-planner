@@ -1,0 +1,14 @@
+{
+  "name": "复旦汉硕备考作战室",
+  "short_name": "复旦备考",
+  "description": "零基础递进、任务滚动与间隔背诵计划",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f0e8",
+  "theme_color": "#0f7357",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
