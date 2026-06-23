@@ -4,8 +4,8 @@ const todayISO = () => new Date().toLocaleDateString("sv-SE");
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const phases = [
-  { minDay:0, maxDay:13, name:"零基础启动 · 建立习惯", focus:["一只鱼笔记先理解，丸子全稿再闭卷提取", "前两周从6小时逐步升到7小时", "不做整套模考；每天必须有小测与闭卷回忆"] },
-  { minDay:14, maxDay:69, name:"第一轮 · 完整理解", focus:["现汉和引论完成理解—回忆—章节题闭环", "英语从长难句进入2010年起逐篇真题", "文化每天30分钟；第4周加入政治"] },
+  { minDay:0, maxDay:13, name:"零基础启动 · 建立习惯", focus:["现汉教材先理解；全稿客观题与简答题双轨推进", "前两周从6小时逐步升到7小时", "不做整套模考；每天8个客观点+1道简答骨架"] },
+  { minDay:14, maxDay:69, name:"第一轮 · 完整理解", focus:["现汉客观题第一轮+简答题持续输出", "英语从长难句进入2010年起逐篇真题", "文化小题与大题并行；第4周加入政治"] },
   { minDay:70, maxDay:111, name:"第二轮 · 背诵真题", focus:["354按专题二轮并使用丸子全稿抽背", "445完成第一次完整背诵", "按真题分析建立主观题母题库"] },
   { minDay:112, maxDay:999, name:"套卷 · 限时输出", focus:["每周完整354、445各一套", "建立60道445母题", "英语整套与政治错题二刷"] },
   { minDay:999, maxDay:9999, name:"冲刺 · 稳定得分", focus:["每周专业课各两套", "只回真题、错题和主资料", "英语近三年模拟，政治肖八肖四"] }
@@ -78,8 +78,9 @@ function defaultTasks(date){
   if(rawIdx<zero354.length){
     const idx=Math.min(zero354.length-1,rawIdx),week=Math.floor(idx/6);
     if(dow===0)return scheduled([["354",`第${week+1}周现汉闭卷框架+错题重做`,"",1.25,"不看答案，先画框架再重做"],["445",`第${week+1}周引论闭卷复述`,"",1.25,"口述框架并手写1道简答"],["文化","本周文化填空错题回炉","",.5,"只做标记错题"],["英语","本周单词+长难句/阅读回炉","",1.25,"错词清零，重做错题不看答案"],["复盘","统计有效时长并排下周","",.5,"只保留真正完成不了的调整"]]);
-    const early=idx<6,second=idx<12,h354=early?1.75:2,h445=early?1.75:2,hEnglish=early?1:second?1.25:1.5,culture=zeroCulture[idx%zeroCulture.length],politics=idx>=18,english=idx<zeroEnglish.length?zeroEnglish[idx]:(()=>{const k=idx-zeroEnglish.length,year=2010+(Math.floor(k/4)%11),passage=k%4+1;return `${year}英语一阅读第${passage}篇精读`;})();
-    const rows=[["英语",`词汇：新词50个 + 间隔复习旧词`,"",.5,"新词只认核心义；旧词按软件到期量清零"],["354",zero354[idx],"",h354,"一只鱼现汉笔记理解60分→丸子全稿对应问答闭卷30分→做5—10题并订正"],["445",zero445[idx],"",h445,"丸子引论主线60分→一只鱼引论只补缺口20分→合书口述并手写1道简答"],["文化",`文化要略：${culture}`,"",.5,"程版芝士条理解→合书写5个关键词→第五版填空题检索测试5题"]];
+    const early=idx<6,second=idx<12,h445=early?1.75:2,hEnglish=early?1:second?1.25:1.5,culture=zeroCulture[idx%zeroCulture.length],politics=idx>=18,english=idx<zeroEnglish.length?zeroEnglish[idx]:(()=>{const k=idx-zeroEnglish.length,year=2010+(Math.floor(k/4)%11),passage=k%4+1;return `${year}英语一阅读第${passage}篇精读`;})(),objectiveCount=idx<24?8:idx<36?12:15,subjectiveCount=idx<12?1:idx<24?2:3,subjectiveHours=idx<12?.5:.75;
+    const objectiveTitle=idx<36?`全稿客观题：同章${objectiveCount}项`:`全稿客观题二轮：错题${objectiveCount}项`;
+    const rows=[["英语",`词汇：新词50个 + 间隔复习旧词`,"",.5,"新词只认核心义；旧词按软件到期量清零"],["354",`教材理解：${zero354[idx]}`,"",.75,"黄廖教材/系统课程为主，一只鱼笔记查漏；合书画结构，不抄原文"],["354",objectiveTitle,"",.5,"只用全稿PDF第16—149页；先遮答案口答，再核对并标记不会/模糊"],["354",`全稿简答题：同章${subjectiveCount}题`,"",subjectiveHours,idx<12?"只列定义—要点—例子三级骨架；使用PDF第150—261页":"限时手写；每点先观点再解释/举例，核对后压缩成答题骨架"],["445",zero445[idx],"",h445,"丸子引论主线60分→一只鱼引论/现外教/教心只补缺口→合书口述并手写1道简答"],["文化",`文化要略：${culture}`,"",.5,idx%2===0?"小题：5道填空；大题：列1题的背景—表现—影响/当代价值提纲":"小题：5道填空；闭卷复述昨日文化大题提纲"]];
     if(politics)rows.push(["政治","政治基础/强化：当天章节","",.75,"听课只记框架，完成肖1000对应题并订正"]);
     rows.push(["英语",english,"",hEnglish,idx<12?"拆出主干、从句和非谓语；精翻2句":"先限时18分钟，再逐题定位并解释干扰项"],["复盘","当日闭卷回忆 + 到期背诵","",.5,"354和445各口述5分钟，按不会/模糊/会了评级"]);
     return scheduled(rows);
@@ -91,10 +92,10 @@ function defaultTasks(date){
   const t445 = foundation445[Math.min(foundation445.length-1, week)];
   const englishDay=Math.max(0,Math.floor((d-start)/86400000)), englishYear=2010+(Math.floor(englishDay/2)%11), englishPart=englishDay%2?3:1;
   const politics = studyIndexFor(date)>=18;
-  if (phase.name.startsWith("第二轮")) return scheduled([["英语","单词复习","",.5,"清空当日复习量"],["354",`二轮专题：${foundation354[week%foundation354.length]}`,"",2,"章节题+白纸框架"],["445",`第一次背诵：${foundation445[week%foundation445.length]}`,"",2,"闭卷写2道主观题"],["政治","强化课与肖1000","",1,"完成对应章节并订正"],["英语","真题阅读/翻译专项","",1.75,"逐题写错因"],["复盘","完成今日到期背诵+真题映射","",.75,"按不会/模糊/会了评级"]]);
+  if (phase.name.startsWith("第二轮")) return scheduled([["英语","单词复习","",.5,"清空当日复习量"],["354",`客观题二轮：${foundation354[week%foundation354.length]}`,"",.75,"全稿客观错题+章节测试，必须达到85%"],["354",`主观题二轮：${foundation354[week%foundation354.length]}`,"",1.25,"2—3题限时手写，按观点—解释—例子自评"],["445",`第一次完整背诵：${foundation445[week%foundation445.length]}`,"",2,"闭卷写2道主观题；文化另保留小题复现"],["政治","强化课与肖1000","",1,"完成对应章节并订正"],["英语","真题阅读/翻译专项","",1.75,"逐题写错因"],["复盘","完成今日到期背诵+真题映射","",.75,"按不会/模糊/会了评级"]]);
   if (phase.name.startsWith("套卷")) return scheduled([["英语","单词与作文表达","",.5,"复习+5句输出"],["354",dow%2 ? "354限时套卷/专题卷" : "354错题与答案校订","",2.25,"按答题纸手写"],["445",dow%2 ? "445母题限时输出" : "445套卷与复盘","",2.25,"至少4道主观题"],["政治","选择题错题二刷+时政","",1,"正确率统计"],["英语","整套/阅读+作文","",1.75,"限时并复盘"],["复盘","完成今日到期背诵+错题回炉","",.5,"次日先重做"]]);
   if (phase.name.startsWith("冲刺")) return scheduled([["英语","单词与作文表达回顾","",.5,"只复习旧内容"],["354","套卷或高频错题","",2.25,"限时手写"],["445","套卷或主观母题快背","",2.25,"闭卷输出"],["政治","肖八/肖四与时政","",1.25,"选择题订正"],["英语","近年真题模拟/复盘","",1.5,"保持手感"],["复盘","完成今日到期背诵+薄弱点清零","",.5,"不新增资料"]]);
-  return scheduled([["英语","单词复习","",.5,"清空当日复习量"],["354",`${t354}：原书/课程+章节题`,"",2,"合书画框架，完成测试"],["445",`${t445}：理解+闭卷复述`,"",2,"输出2道主观题"],[politics?"政治":"445",politics?"强化课+肖1000":"中国文化：程版+芝士条","",1,politics?"完成对应章节并订正":"每日文化卡5题"],["英语",`${englishYear}英语一阅读第${englishPart}—${englishPart+1}篇`,"",1.75,"先限时18分钟/篇，再逐句定位，写清错因"],["复盘","完成今日到期背诵+错题入表","",.75,"按不会/模糊/会了评级"]]);
+  return scheduled([["英语","单词复习","",.5,"清空当日复习量"],["354",`${t354}：客观错题与应用题`,"",.75,"全稿客观题二刷+章节测试，正确率达到85%"],["354",`${t354}：简答题完整输出`,"",1.25,"全稿简答3—4题：先口述，再限时手写1题"],["445",`${t445}：理解+闭卷复述`,"",2,"输出2道主观题"],[politics?"政治":"445",politics?"强化课+肖1000":"中国文化：小题+大题","",1,politics?"完成对应章节并订正":"10道小题+1道文化大题骨架"],["英语",`${englishYear}英语一阅读第${englishPart}—${englishPart+1}篇`,"",1.75,"先限时18分钟/篇，再逐句定位，写清错因"],["复盘","完成今日到期背诵+错题入表","",.75,"按不会/模糊/会了评级"]]);
 }
 
 function dayData(date){
@@ -144,7 +145,7 @@ function resourcesForTask(task){
   if(!localAllowed)return [];
   if(task.subject==="354") return [
     {label:"理解笔记",title:"一只鱼现汉笔记（第一次理解）",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/一只鱼的资料pay/专一/现汉/笔记/现汉笔记（修改学姐的）.docx")},
-    {label:"丸子全稿",title:"丸子黄廖现汉主客观题背诵小册",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/黄廖现汉全稿【11.6版前95页已检查】(1).pdf")},
+    {label:"丸子全稿",title:"客观题PDF16—149页；简答题PDF150—261页",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/黄廖现汉全稿【11.6版前95页已检查】(1).pdf")},
     {label:"章节测试",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/黄廖现代汉语测试.pdf")}
   ];
   if(task.subject==="445"&&!task.title.includes("文化")) return [
