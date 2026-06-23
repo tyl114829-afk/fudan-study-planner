@@ -43,6 +43,16 @@
       <button class="date-arrow" id="nextDay" aria-label="后一天">→</button>
     </section>
 
+    <section class="milestone-card card" aria-label="备考节点">
+      <div class="milestone-head"><div><p class="eyebrow">MILESTONES</p><h2>阶段节点</h2></div><span class="muted">可在“调整目标”中修改</span></div>
+      <div class="milestone-track" id="milestoneTrack">
+        <div class="milestone-item" id="startMilestone"><span class="milestone-dot"></span><strong>零基础开始</strong><time id="startMilestoneDate">—</time><small id="startMilestoneStatus">—</small></div>
+        <div class="milestone-item key" id="firstMilestone"><span class="milestone-dot"></span><strong>一轮完成</strong><time id="firstMilestoneDate">—</time><small id="firstMilestoneStatus">—</small></div>
+        <div class="milestone-item key" id="secondMilestone"><span class="milestone-dot"></span><strong>二轮完成</strong><time id="secondMilestoneDate">—</time><small id="secondMilestoneStatus">—</small></div>
+        <div class="milestone-item" id="examMilestone"><span class="milestone-dot"></span><strong>初试</strong><time id="examMilestoneDate">—</time><small id="examMilestoneStatus">—</small></div>
+      </div>
+    </section>
+
     <section class="dashboard-grid">
       <article class="progress-card card">
         <div class="progress-ring" id="progressRing">
@@ -181,6 +191,10 @@
     <form method="dialog" id="settingsForm">
       <div class="dialog-head"><h2>目标设置</h2><button type="button" id="closeSettingsDialog" class="icon-button">×</button></div>
       <label>零基础计划开始日期<input id="studyStartDateInput" type="date" /></label>
+      <div class="form-row">
+        <label>一轮完成日期<input id="firstRoundEndInput" type="date" /></label>
+        <label>二轮完成日期<input id="secondRoundEndInput" type="date" /></label>
+      </div>
       <label>成熟期每日容量（前两周自动按6h→7h爬坡）<input id="dailyTargetInput" type="number" min="4" max="12" step="0.5" /></label>
       <label>成熟期每周目标（前两周自动40h→45h）<input id="weeklyTargetInput" type="number" min="20" max="80" step="1" /></label>
       <label>初试日期<input id="examDateInput" type="date" /></label>
