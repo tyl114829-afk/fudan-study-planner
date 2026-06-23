@@ -4,11 +4,11 @@ const todayISO = () => new Date().toLocaleDateString("sv-SE");
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const phases = [
-  { start:"2026-06-22", end:"2026-07-05", name:"零基础启动 · 建立习惯", focus:["先理解术语和教材结构，不急着整套模考", "前两周从6小时逐步升到7小时", "每天必须有闭卷回忆，不抄漂亮笔记"] },
-  { start:"2026-07-06", end:"2026-08-16", name:"第一轮 · 完整理解", focus:["黄廖现汉与引论逐节完成第一轮", "英语从语法长难句进入逐篇真题", "政治7月15日开始，文化每天30分钟"] },
-  { start:"2026-08-17", end:"2026-09-27", name:"第二轮 · 背诵真题", focus:["354七大专题二轮", "445完成第一次完整背诵", "逐年拆解2022—2026回忆题"] },
-  { start:"2026-09-28", end:"2026-11-15", name:"套卷 · 限时输出", focus:["每周完整354、445各一套", "建立60道445母题", "英语整套与政治错题二刷"] },
-  { start:"2026-11-16", end:"2026-12-31", name:"冲刺 · 稳定得分", focus:["每周专业课各两套", "只回真题、错题和主资料", "英语近三年模拟，政治肖八肖四"] }
+  { minDay:0, maxDay:13, name:"零基础启动 · 建立习惯", focus:["一只鱼笔记先理解，丸子全稿再闭卷提取", "前两周从6小时逐步升到7小时", "不做整套模考；每天必须有小测与闭卷回忆"] },
+  { minDay:14, maxDay:69, name:"第一轮 · 完整理解", focus:["现汉和引论完成理解—回忆—章节题闭环", "英语从长难句进入2010年起逐篇真题", "文化每天30分钟；第4周加入政治"] },
+  { minDay:70, maxDay:111, name:"第二轮 · 背诵真题", focus:["354按专题二轮并使用丸子全稿抽背", "445完成第一次完整背诵", "按真题分析建立主观题母题库"] },
+  { minDay:112, maxDay:999, name:"套卷 · 限时输出", focus:["每周完整354、445各一套", "建立60道445母题", "英语整套与政治错题二刷"] },
+  { minDay:999, maxDay:9999, name:"冲刺 · 稳定得分", focus:["每周专业课各两套", "只回真题、错题和主资料", "英语近三年模拟，政治肖八肖四"] }
 ];
 
 const diagnosticPlans = {
@@ -49,14 +49,15 @@ let filter = "all";
 let lastRollSnapshot = null;
 
 function loadData(){
-  const base = { schemaVersion:4, days:{}, reviewUnits:[], settings:{dailyTarget:8, weeklyTarget:50, examDate:"2026-12-19", theme:"light", autoRollover:true,morningStart:"08:30",afternoonStart:"13:30",eveningStart:"19:00",breakMinutes:20}, lastDate:todayISO(), lastAutoRollDate:todayISO() };
+  const base = { schemaVersion:5, days:{}, reviewUnits:[], settings:{studyStartDate:todayISO(),dailyTarget:8, weeklyTarget:50, examDate:"2026-12-19", theme:"light", autoRollover:true,morningStart:"08:30",afternoonStart:"13:30",eveningStart:"19:00",breakMinutes:20}, lastDate:todayISO(), lastAutoRollDate:todayISO() };
   try { return normalizeData(JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),base); } catch { return base; }
 }
-function normalizeData(saved,base={ schemaVersion:4, days:{}, reviewUnits:[], settings:{dailyTarget:8, weeklyTarget:50, examDate:"2026-12-19", theme:"light", autoRollover:true,morningStart:"08:30",afternoonStart:"13:30",eveningStart:"19:00",breakMinutes:20}, lastDate:todayISO(), lastAutoRollDate:todayISO() }){
-  const oldVersion=Number(saved.schemaVersion||0),legacy=Object.keys(saved||{}).length&&oldVersion<3, merged=Object.assign({},base,saved); merged.settings=Object.assign({},base.settings,saved.settings||{}); merged.days=merged.days||{}; merged.reviewUnits=merged.reviewUnits||[]; merged.lastAutoRollDate=merged.lastAutoRollDate||todayISO(); merged.schemaVersion=4;if(legacy)merged.needsPipelineMigration=true;if(Object.keys(saved||{}).length&&oldVersion<4)merged.needsZeroReset=true;return merged;
+function normalizeData(saved,base={ schemaVersion:5, days:{}, reviewUnits:[], settings:{studyStartDate:todayISO(),dailyTarget:8, weeklyTarget:50, examDate:"2026-12-19", theme:"light", autoRollover:true,morningStart:"08:30",afternoonStart:"13:30",eveningStart:"19:00",breakMinutes:20}, lastDate:todayISO(), lastAutoRollDate:todayISO() }){
+  const oldVersion=Number(saved.schemaVersion||0),legacy=Object.keys(saved||{}).length&&oldVersion<3, merged=Object.assign({},base,saved); merged.settings=Object.assign({},base.settings,saved.settings||{}); merged.days=merged.days||{}; merged.reviewUnits=merged.reviewUnits||[]; merged.lastAutoRollDate=merged.lastAutoRollDate||todayISO(); merged.schemaVersion=5;if(legacy)merged.needsPipelineMigration=true;if(Object.keys(saved||{}).length&&oldVersion<4)merged.needsZeroReset=true;if(Object.keys(saved||{}).length&&oldVersion<5)merged.needsMaterialReset=true;return merged;
 }
 function saveData(){ data.lastDate = selectedDate;if(!globalThis.cloudSyncApplying)data.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY, JSON.stringify(data));flashSaved();if(!globalThis.cloudSyncApplying)globalThis.cloudSync?.schedulePush?.(); }
-function phaseFor(date){ return phases.find(p => date >= p.start && date <= p.end) || phases[phases.length - 1]; }
+function daysFromStart(date){return Math.floor((new Date(`${date}T12:00:00`)-new Date(`${data.settings.studyStartDate||todayISO()}T12:00:00`))/86400000);}
+function phaseFor(date){const remain=Math.ceil((new Date(`${data.settings.examDate}T12:00:00`)-new Date(`${date}T12:00:00`))/86400000);if(remain<=35)return phases[4];const elapsed=Math.max(0,daysFromStart(date));return phases.find(p=>elapsed>=p.minDay&&elapsed<=p.maxDay)||phases[3];}
 function priorityFor(subject){ return subject==="354"||subject==="445"?3:subject==="文化"||subject==="英语"||subject==="政治"?2:1; }
 function toTask(row){ return { id:uid(), subject:row[0], title:row[1], time:row[2], hours:Number(row[3]), deliverable:row[4] || "", priority:priorityFor(row[0]), locked:false, done:false }; }
 function minutesOf(time){const [h,m]=String(time||"08:30").split(":").map(Number);return h*60+m;}
@@ -66,28 +67,30 @@ function reflowTasks(tasks){
   tasks.forEach((task,i)=>{if(task.locked)return;const g=groups[i]??2;task.time=timeOf(cursor[g]);cursor[g]+=Math.round(Number(task.hours)*60)+breakMin;});return tasks;
 }
 function scheduled(rows){return reflowTasks(rows.map(toTask));}
-function studyIndexFor(date){let cursor=new Date("2026-06-22T12:00:00"),target=new Date(`${date}T12:00:00`),count=0;while(cursor<target){if(cursor.getDay()!==0)count++;cursor.setDate(cursor.getDate()+1);}return count;}
-function capacityForDate(date){if(date<="2026-06-28")return Math.min(6,data.settings.dailyTarget);if(date<="2026-07-05")return Math.min(7,data.settings.dailyTarget);return data.settings.dailyTarget;}
-function weeklyTargetForDate(date){if(date<="2026-06-28")return Math.min(40,data.settings.weeklyTarget);if(date<="2026-07-05")return Math.min(45,data.settings.weeklyTarget);return data.settings.weeklyTarget;}
+function studyIndexFor(date){let cursor=new Date(`${data.settings.studyStartDate||todayISO()}T12:00:00`),target=new Date(`${date}T12:00:00`),count=0;if(target<=cursor)return 0;while(cursor<target){if(cursor.getDay()!==0)count++;cursor.setDate(cursor.getDate()+1);}return count;}
+function capacityForDate(date){const elapsed=daysFromStart(date);if(elapsed<7)return Math.min(6,data.settings.dailyTarget);if(elapsed<14)return Math.min(7,data.settings.dailyTarget);return data.settings.dailyTarget;}
+function weeklyTargetForDate(date){const elapsed=daysFromStart(date);if(elapsed<7)return Math.min(40,data.settings.weeklyTarget);if(elapsed<14)return Math.min(45,data.settings.weeklyTarget);return data.settings.weeklyTarget;}
 
 function defaultTasks(date){
   const d = new Date(`${date}T12:00:00`), dow = d.getDay(), phase = phaseFor(date);
-  if(date<="2026-08-16"){
-    const idx=Math.min(zero354.length-1,studyIndexFor(date)),week=Math.floor(idx/6);
+  if(daysFromStart(date)<0)return scheduled([["准备","零基础计划尚未开始","",.25,`计划将在 ${data.settings.studyStartDate} 自动开始；可在目标设置中修改`]]);
+  const rawIdx=studyIndexFor(date);
+  if(rawIdx<zero354.length){
+    const idx=Math.min(zero354.length-1,rawIdx),week=Math.floor(idx/6);
     if(dow===0)return scheduled([["354",`第${week+1}周现汉闭卷框架+错题重做`,"",1.25,"不看答案，先画框架再重做"],["445",`第${week+1}周引论闭卷复述`,"",1.25,"口述框架并手写1道简答"],["文化","本周文化填空错题回炉","",.5,"只做标记错题"],["英语","本周单词+长难句/阅读回炉","",1.25,"错词清零，重做错题不看答案"],["复盘","统计有效时长并排下周","",.5,"只保留真正完成不了的调整"]]);
-    const early=idx<6,second=idx<12,h354=early?1.75:2,h445=early?1.75:2,hEnglish=early?1:second?1.25:1.5,culture=zeroCulture[idx%zeroCulture.length],politics=date>="2026-07-15",english=idx<zeroEnglish.length?zeroEnglish[idx]:(()=>{const k=idx-zeroEnglish.length,year=2010+(Math.floor(k/4)%11),passage=k%4+1;return `${year}英语一阅读第${passage}篇精读`;})();
-    const rows=[["英语",`词汇：新词50个 + 间隔复习旧词`,"",.5,"新词只认核心义；旧词按软件到期量清零"],["354",zero354[idx],"",h354,"先读主资料→合书画框架→做5—10道对应题"],["445",zero445[idx],"",h445,"理解术语→合书口述→手写1道简答题"],["文化",`文化要略：${culture}`,"",.5,"芝士条学习后闭卷写5个关键词并做5道填空"]];
+    const early=idx<6,second=idx<12,h354=early?1.75:2,h445=early?1.75:2,hEnglish=early?1:second?1.25:1.5,culture=zeroCulture[idx%zeroCulture.length],politics=idx>=18,english=idx<zeroEnglish.length?zeroEnglish[idx]:(()=>{const k=idx-zeroEnglish.length,year=2010+(Math.floor(k/4)%11),passage=k%4+1;return `${year}英语一阅读第${passage}篇精读`;})();
+    const rows=[["英语",`词汇：新词50个 + 间隔复习旧词`,"",.5,"新词只认核心义；旧词按软件到期量清零"],["354",zero354[idx],"",h354,"一只鱼现汉笔记理解60分→丸子全稿对应问答闭卷30分→做5—10题并订正"],["445",zero445[idx],"",h445,"丸子引论主线60分→一只鱼引论只补缺口20分→合书口述并手写1道简答"],["文化",`文化要略：${culture}`,"",.5,"程版芝士条理解→合书写5个关键词→第五版填空题检索测试5题"]];
     if(politics)rows.push(["政治","政治基础/强化：当天章节","",.75,"听课只记框架，完成肖1000对应题并订正"]);
     rows.push(["英语",english,"",hEnglish,idx<12?"拆出主干、从句和非谓语；精翻2句":"先限时18分钟，再逐题定位并解释干扰项"],["复盘","当日闭卷回忆 + 到期背诵","",.5,"354和445各口述5分钟，按不会/模糊/会了评级"]);
     return scheduled(rows);
   }
   if (dow === 0) return scheduled([["354","本周354错题重做","",1.25,"不看答案独立完成"],["445","本周445闭卷复述","",1.25,"写出知识框架"],["英语","单词与阅读周复盘","",1,"清空本周错词"],["复盘","统计周有效时长并排下周","",.5,"只保留高价值任务"]]);
-  const start = new Date("2026-06-22T12:00:00");
+  const start = new Date(`${data.settings.studyStartDate||todayISO()}T12:00:00`);
   const week = Math.max(0, Math.floor((d - start) / 604800000));
   const t354 = foundation354[Math.min(foundation354.length-1, week)];
   const t445 = foundation445[Math.min(foundation445.length-1, week)];
   const englishDay=Math.max(0,Math.floor((d-start)/86400000)), englishYear=2010+(Math.floor(englishDay/2)%11), englishPart=englishDay%2?3:1;
-  const politics = date >= "2026-07-15";
+  const politics = studyIndexFor(date)>=18;
   if (phase.name.startsWith("第二轮")) return scheduled([["英语","单词复习","",.5,"清空当日复习量"],["354",`二轮专题：${foundation354[week%foundation354.length]}`,"",2,"章节题+白纸框架"],["445",`第一次背诵：${foundation445[week%foundation445.length]}`,"",2,"闭卷写2道主观题"],["政治","强化课与肖1000","",1,"完成对应章节并订正"],["英语","真题阅读/翻译专项","",1.75,"逐题写错因"],["复盘","完成今日到期背诵+真题映射","",.75,"按不会/模糊/会了评级"]]);
   if (phase.name.startsWith("套卷")) return scheduled([["英语","单词与作文表达","",.5,"复习+5句输出"],["354",dow%2 ? "354限时套卷/专题卷" : "354错题与答案校订","",2.25,"按答题纸手写"],["445",dow%2 ? "445母题限时输出" : "445套卷与复盘","",2.25,"至少4道主观题"],["政治","选择题错题二刷+时政","",1,"正确率统计"],["英语","整套/阅读+作文","",1.75,"限时并复盘"],["复盘","完成今日到期背诵+错题回炉","",.5,"次日先重做"]]);
   if (phase.name.startsWith("冲刺")) return scheduled([["英语","单词与作文表达回顾","",.5,"只复习旧内容"],["354","套卷或高频错题","",2.25,"限时手写"],["445","套卷或主观母题快背","",2.25,"闭卷输出"],["政治","肖八/肖四与时政","",1.25,"选择题订正"],["英语","近年真题模拟/复盘","",1.5,"保持手感"],["复盘","完成今日到期背诵+薄弱点清零","",.5,"不新增资料"]]);
@@ -118,31 +121,42 @@ function renderTasks(){
   const tasks = dayData(selectedDate).tasks.filter(t => filter === "all" || (filter === "done" ? t.done : !t.done));
   const el = document.querySelector("#taskList");
   if (!tasks.length){ el.innerHTML = '<div class="empty-state">这里暂时没有任务。可以添加一项明确、可交付的任务。</div>'; return; }
-  el.innerHTML = tasks.map(t=>{const resource=resourceForTask(t);return `<div class="task-item priority-${t.priority||2} ${t.done?"done":""} ${t.locked?"locked":""}" data-id="${t.id}">
+  el.innerHTML = tasks.map(t=>{const resources=resourcesForTask(t);return `<div class="task-item priority-${t.priority||2} ${t.done?"done":""} ${t.locked?"locked":""}" data-id="${t.id}">
     <label class="check-wrap"><input type="checkbox" ${t.done?"checked":""} aria-label="完成 ${esc(t.title)}"></label>
     <input class="task-time-input" type="time" value="${esc(t.time)}" aria-label="修改 ${esc(t.title)} 的开始时间" title="可直接修改开始时间">
     <div><div><span class="subject-pill">${esc(t.subject)}</span></div><div class="task-title">${esc(t.title)}</div><div class="task-deliverable">${esc(t.deliverable)}</div>${t.rollCount?`<span class="roll-badge">↪ 原定 ${esc(t.originDate||t.rolledFrom)} · 已顺延 ${t.rollCount} 次</span>`:""}</div>
     <span class="task-hours">${Number(t.hours).toFixed(t.hours%1?2:0)}h</span>
-    <div class="task-actions">${t.subject==="文化"?'<button class="mini-button resource-link open-culture" title="打开文化背诵库">文化库</button>':resource?`<a class="mini-button resource-link" href="${resource}" target="_blank" title="打开对应资料">资料</a>`:""}<button class="mini-button remember" title="加入间隔背诵">◎</button><button class="mini-button lock" title="${t.locked?"取消锁定":"锁定在这一天"}">${t.locked?"◆":"◇"}</button><button class="mini-button defer" title="仅将此任务顺延一天并平衡后续">→</button><button class="mini-button edit" title="编辑">✎</button><button class="mini-button remove" title="删除">×</button></div>
+    <div class="task-actions">${t.subject==="文化"?'<button class="mini-button resource-link open-culture" title="打开文化背诵库">文化库</button>':""}${resources.map(r=>`<a class="mini-button resource-link" href="${r.href}" target="_blank" title="${esc(r.title||r.label)}">${esc(r.label)}</a>`).join("")}<button class="mini-button remember" title="加入间隔背诵">◎</button><button class="mini-button lock" title="${t.locked?"取消锁定":"锁定在这一天"}">${t.locked?"◆":"◇"}</button><button class="mini-button defer" title="仅将此任务顺延一天并平衡后续">→</button><button class="mini-button edit" title="编辑">✎</button><button class="mini-button remove" title="删除">×</button></div>
   </div>`}).join("");
 }
 
-function resourceForTask(task){
+function resourcesForTask(task){
   const localAllowed=typeof location==="undefined"||location.protocol==="file:"||location.hostname==="localhost"||location.hostname==="127.0.0.1";
   if(task.subject==="英语"){
-    if(task.title.includes("词汇")||task.title.includes("单词")) return "";
-    if(task.title.includes("2022")) return "https://news.koolearn.com/20211226/1251849.html";
-    if(!localAllowed)return "";
-    if(task.title.includes("作文")) return encodeURI("file:///C:/Users/Administrator/Desktop/汉教/一只鱼的资料pay/英语作文/");
-    if(task.title.includes("2020")) return encodeURI("file:///C:/Users/Administrator/Desktop/汉教/英语/英语一真题/01_题卷/2020年考研英语一真题.pdf");
-    if(/201\d/.test(task.title)) return encodeURI("file:///C:/Users/Administrator/Desktop/汉教/英语/英语一真题/01_题卷/2010-2019年考研英语一真题集.pdf");
-    return encodeURI("file:///C:/Users/Administrator/Desktop/汉教/英语/英语一真题/");
+    if(task.title.includes("词汇")||task.title.includes("单词")) return [];
+    if(task.title.includes("2022")) return [{label:"在线题",href:"https://news.koolearn.com/20211226/1251849.html"}];
+    if(!localAllowed)return [];
+    if(task.title.includes("作文")) return [{label:"作文",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/一只鱼的资料pay/英语作文/")}];
+    if(task.title.includes("2020")) return [{label:"题卷",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/英语/英语一真题/01_题卷/2020年考研英语一真题.pdf")}];
+    if(/201\d/.test(task.title)) return [{label:"题卷",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/英语/英语一真题/01_题卷/2010-2019年考研英语一真题集.pdf")},{label:"解析",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/英语/英语一真题/02_答案解析/")}];
+    return [{label:"英语资料",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/英语/英语一真题/")}];
   }
-  if(!localAllowed)return "";
-  if(task.subject==="354") return encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/黄廖现汉全稿【11.6版前95页已检查】.pdf");
-  if(task.subject==="445") return task.title.includes("文化")?encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/程版要略芝士条块（发送版）.pdf"):encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/引论 （我用的这个）.pdf");
-  if(task.subject==="文化") return encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/程版要略芝士条块（发送版）.pdf");
-  return "";
+  if(!localAllowed)return [];
+  if(task.subject==="354") return [
+    {label:"理解笔记",title:"一只鱼现汉笔记（第一次理解）",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/一只鱼的资料pay/专一/现汉/笔记/现汉笔记（修改学姐的）.docx")},
+    {label:"丸子全稿",title:"丸子黄廖现汉主客观题背诵小册",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/黄廖现汉全稿【11.6版前95页已检查】(1).pdf")},
+    {label:"章节测试",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/黄廖现代汉语测试.pdf")}
+  ];
+  if(task.subject==="445"&&!task.title.includes("文化")) return [
+    {label:"丸子引论",title:"61页主线版本",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/引论 （我用的这个）.pdf")},
+    {label:"一只鱼补充",title:"只用于查漏，不逐字背",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/一只鱼的资料pay/专二/教引/引论 （我用的这个）.docx")},
+    {label:"真题分析",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/一只鱼的资料pay/真题分析/汉语国际教育基础真题分析 (2).pdf")}
+  ];
+  if(task.subject==="445"||task.subject==="文化") return [
+    {label:"程版要略",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/程版要略芝士条块（发送版）.pdf")},
+    {label:"填空题",href:encodeURI("file:///C:/Users/Administrator/Desktop/汉教/丸子/《中国文化要略》第五版填空题.pdf")}
+  ];
+  return [];
 }
 
 function renderRolloverNotice(){
@@ -213,6 +227,17 @@ function resetZeroPlanIfNeeded(){
   if(!data.needsZeroReset)return;
   data.preservedNotes=data.preservedNotes||{};Object.keys(data.days).filter(date=>date>="2026-06-22").forEach(date=>{if(data.days[date]?.note)data.preservedNotes[date]=data.days[date].note;delete data.days[date];});
   delete data.pipelineLastDate;delete data.needsZeroReset;delete data.needsPipelineMigration;data.lastAutoRollDate=todayISO();localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+}
+function resetMaterialPlanIfNeeded(){
+  if(!data.needsMaterialReset)return;
+  data.preservedNotes=data.preservedNotes||{};
+  Object.keys(data.days).filter(date=>date>=todayISO()).forEach(date=>{
+    const day=data.days[date],hasCompleted=(day?.tasks||[]).some(t=>t.done);
+    if(hasCompleted)return;
+    if(day?.note)data.preservedNotes[date]=day.note;
+    delete data.days[date];
+  });
+  delete data.needsMaterialReset;delete data.pipelineLastDate;data.lastAutoRollDate=todayISO();localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
 }
 function renderQueue(){
   let html="",overDays=0,carried=0,total=0;
@@ -318,13 +343,14 @@ document.querySelector("#reflowDayBtn").onclick=()=>{reflowTasks(dayData(selecte
 document.querySelector("#rebalanceBtn").onclick=()=>{snapshotRoll();const result=rebalanceFrom(selectedDate);saveData();render();if(result.unresolved>0)alert("存在已完成或锁定任务造成的超载，请取消锁定或调整时长。");};
 document.querySelector("#undoRollBtn").onclick=()=>{if(!lastRollSnapshot)return;data.days=JSON.parse(lastRollSnapshot);lastRollSnapshot=null;document.querySelector("#undoRollBtn").disabled=true;saveData();render();};
 document.querySelector("#themeToggle").onclick=()=>{data.settings.theme=data.settings.theme==="dark"?"light":"dark";saveData();render();};
-document.querySelector("#settingsBtn").onclick=()=>{document.querySelector("#dailyTargetInput").value=data.settings.dailyTarget;document.querySelector("#weeklyTargetInput").value=data.settings.weeklyTarget;document.querySelector("#examDateInput").value=data.settings.examDate;document.querySelector("#morningStartInput").value=data.settings.morningStart;document.querySelector("#afternoonStartInput").value=data.settings.afternoonStart;document.querySelector("#eveningStartInput").value=data.settings.eveningStart;document.querySelector("#breakMinutesInput").value=data.settings.breakMinutes;document.querySelector("#autoRolloverInput").checked=data.settings.autoRollover!==false;document.querySelector("#settingsDialog").showModal();};
+document.querySelector("#settingsBtn").onclick=()=>{document.querySelector("#studyStartDateInput").value=data.settings.studyStartDate||todayISO();document.querySelector("#dailyTargetInput").value=data.settings.dailyTarget;document.querySelector("#weeklyTargetInput").value=data.settings.weeklyTarget;document.querySelector("#examDateInput").value=data.settings.examDate;document.querySelector("#morningStartInput").value=data.settings.morningStart;document.querySelector("#afternoonStartInput").value=data.settings.afternoonStart;document.querySelector("#eveningStartInput").value=data.settings.eveningStart;document.querySelector("#breakMinutesInput").value=data.settings.breakMinutes;document.querySelector("#autoRolloverInput").checked=data.settings.autoRollover!==false;document.querySelector("#settingsDialog").showModal();};
 document.querySelector("#closeSettingsDialog").onclick=()=>document.querySelector("#settingsDialog").close(); document.querySelector("#cancelSettingsBtn").onclick=()=>document.querySelector("#settingsDialog").close();
-document.querySelector("#settingsForm").onsubmit=e=>{e.preventDefault();data.settings.dailyTarget=Number(document.querySelector("#dailyTargetInput").value);data.settings.weeklyTarget=Number(document.querySelector("#weeklyTargetInput").value);data.settings.examDate=document.querySelector("#examDateInput").value;data.settings.morningStart=document.querySelector("#morningStartInput").value||"08:30";data.settings.afternoonStart=document.querySelector("#afternoonStartInput").value||"13:30";data.settings.eveningStart=document.querySelector("#eveningStartInput").value||"19:00";data.settings.breakMinutes=Number(document.querySelector("#breakMinutesInput").value||20);data.settings.autoRollover=document.querySelector("#autoRolloverInput").checked;data.lastAutoRollDate=todayISO();document.querySelector("#settingsDialog").close();saveData();render();};
+document.querySelector("#settingsForm").onsubmit=e=>{e.preventDefault();const previousStart=data.settings.studyStartDate;data.settings.studyStartDate=document.querySelector("#studyStartDateInput").value||todayISO();data.settings.dailyTarget=Number(document.querySelector("#dailyTargetInput").value);data.settings.weeklyTarget=Number(document.querySelector("#weeklyTargetInput").value);data.settings.examDate=document.querySelector("#examDateInput").value;data.settings.morningStart=document.querySelector("#morningStartInput").value||"08:30";data.settings.afternoonStart=document.querySelector("#afternoonStartInput").value||"13:30";data.settings.eveningStart=document.querySelector("#eveningStartInput").value||"19:00";data.settings.breakMinutes=Number(document.querySelector("#breakMinutesInput").value||20);data.settings.autoRollover=document.querySelector("#autoRolloverInput").checked;data.lastAutoRollDate=todayISO();if(previousStart!==data.settings.studyStartDate){Object.keys(data.days).filter(date=>date>=todayISO()&&!(data.days[date]?.tasks||[]).some(t=>t.done)).forEach(date=>delete data.days[date]);selectedDate=data.settings.studyStartDate;}document.querySelector("#settingsDialog").close();saveData();render();};
 document.querySelector("#exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`复旦备考计划-${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href);};
 document.querySelector("#importInput").onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{data=normalizeData(JSON.parse(reader.result));saveData();render();}catch{alert("备份文件无法识别。");}};reader.readAsText(file);};
 
 resetZeroPlanIfNeeded();
+resetMaterialPlanIfNeeded();
 autoRolloverToToday();
 migratePipelineIfNeeded();
 initCultureDeck();
