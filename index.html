@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f7357" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="复旦备考" />
+  <title>复旦 2027 · 今日作战室</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">FUDAN 2027 · MTCSOL</p>
+        <h1>今日作战室</h1>
+        <p class="subtitle">零基础递进，作息由你决定；旧任务优先，但每天不透支。</p>
+      </div>
+      <div class="top-actions">
+        <button class="ghost-button" id="cultureDeckBtn">文化背诵库</button>
+        <button class="icon-button" id="themeToggle" title="切换深浅主题" aria-label="切换深浅主题">◐</button>
+        <button class="ghost-button" id="exportBtn">导出备份</button>
+        <label class="ghost-button file-label">导入备份<input id="importInput" type="file" accept="application/json" /></label>
+      </div>
+    </header>
+
+    <section class="date-strip card">
+      <button class="date-arrow" id="prevDay" aria-label="前一天">←</button>
+      <div class="date-center">
+        <label for="datePicker" id="dateLabel">2026年6月23日</label>
+        <input id="datePicker" type="date" />
+        <span id="phaseBadge" class="phase-badge">诊断周</span>
+      </div>
+      <button class="today-button" id="todayBtn">今天</button>
+      <button class="date-arrow" id="nextDay" aria-label="后一天">→</button>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="progress-card card">
+        <div class="progress-ring" id="progressRing">
+          <div class="ring-inner"><strong id="progressPercent">0%</strong><span>完成度</span></div>
+        </div>
+        <div class="progress-copy">
+          <p class="metric-label">今日有效学习</p>
+          <p class="metric"><strong id="completedHours">0</strong><span> / </span><span id="plannedHours">8.2</span><small>小时</small></p>
+          <p id="progressMessage" class="muted">先完成第一块，状态会跟上来。</p>
+        </div>
+      </article>
+
+      <article class="streak-card card">
+        <div>
+          <p class="metric-label">连续达标</p>
+          <p class="big-number"><span id="streakDays">0</span><small>天</small></p>
+        </div>
+        <div class="target-copy">
+          <span>最低目标</span>
+          <strong id="dailyTargetLabel">8 小时</strong>
+          <button class="text-button" id="settingsBtn">调整目标</button>
+        </div>
+      </article>
+
+      <article class="countdown-card card">
+        <p class="metric-label">距离初试</p>
+        <p class="big-number"><span id="countdownDays">—</span><small>天</small></p>
+        <p class="muted">默认按 2026-12-19，可在设置中修改。</p>
+      </article>
+    </section>
+
+    <section class="main-grid">
+      <article class="task-panel card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">TODAY</p>
+            <h2>今日任务</h2>
+          </div>
+          <div class="section-actions">
+            <select id="taskFilter" aria-label="筛选任务">
+              <option value="all">全部</option>
+              <option value="open">未完成</option>
+              <option value="done">已完成</option>
+            </select>
+            <button class="ghost-button" id="reflowDayBtn" title="按设置中的早中晚开始时间重排当天任务">按我的时间重排</button>
+            <button class="ghost-button" id="minimumDayBtn" title="状态很差时只保留最重要的约3小时">切换保底日</button>
+            <button class="ghost-button" id="rolloverBtn" title="顺延未完成任务，并自动平衡后续日期容量">智能顺延</button>
+            <button class="ghost-button leave-button" id="leaveBtn" title="标记请假并顺延未完成任务">今天请假</button>
+            <button class="primary-button" id="addTaskBtn">＋ 添加任务</button>
+          </div>
+        </div>
+        <div id="rolloverNotice" class="rollover-notice" hidden></div>
+        <div id="taskList" class="task-list"></div>
+        <div class="panel-footer">
+          <div class="footer-actions"><button class="text-button danger" id="resetDayBtn">恢复当天默认计划</button><button class="text-button" id="undoRollBtn" disabled>撤销上次滚动</button></div>
+          <span id="saveStatus" class="save-status">已自动保存</span>
+        </div>
+      </article>
+
+      <aside class="side-stack">
+        <article class="install-card card" id="installCard">
+          <div class="section-head compact"><div><p class="eyebrow">IPHONE</p><h2>安装到苹果手机</h2></div><button class="review-delete" id="hideInstallBtn" title="稍后隐藏">×</button></div>
+          <p class="install-copy">用 Safari 打开部署后的 HTTPS 地址 → 点底部“分享” → “添加到主屏幕”。安装后可全屏、离线打开。</p>
+          <span id="installStatus" class="install-status">当前是电脑本地版，需发布后才能在手机安装。</span>
+        </article>
+
+        <article class="queue-card card">
+          <div class="section-head compact">
+            <div><p class="eyebrow">PIPELINE</p><h2>未来7天负荷</h2></div>
+            <button class="primary-button small" id="rebalanceBtn">重新平衡</button>
+          </div>
+          <div id="queueSummary" class="queue-summary"></div>
+          <div id="queueList" class="queue-list"></div>
+          <p class="review-hint">每天不超过目标时长。旧任务优先，新任务自动向后让位；锁定任务不会被推走。</p>
+        </article>
+
+        <article class="review-card card">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">RECALL</p>
+              <h2>今日背诵队列</h2>
+            </div>
+            <button class="primary-button small" id="addReviewBtn">＋ 新单元</button>
+          </div>
+          <div class="review-method">
+            <strong>一次背诵 = 三步主动回忆</strong>
+            <span>① 合书说/写 5分钟　② 对照补缺 3分钟　③ 再次合书 2分钟</span>
+          </div>
+          <div id="reviewSummary" class="review-summary"></div>
+          <div id="reviewList" class="review-list"></div>
+          <p class="review-hint">间隔：当天 → 1 → 3 → 7 → 14 → 30 → 60 → 90天</p>
+        </article>
+
+        <article class="week-card card">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">WEEK</p>
+              <h2>本周进度</h2>
+            </div>
+            <strong id="weekHours">0 / 50h</strong>
+          </div>
+          <div id="weekBars" class="week-bars"></div>
+        </article>
+
+        <article class="focus-card card">
+          <p class="eyebrow">FOCUS</p>
+          <h2 id="focusTitle">本阶段重点</h2>
+          <ul id="focusList"></ul>
+        </article>
+
+        <article class="note-card card">
+          <div class="section-head compact"><h2>今日复盘</h2><span class="muted">自动保存</span></div>
+          <textarea id="dailyNote" rows="6" placeholder="今天卡在哪里？明天第一件事是什么？"></textarea>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="taskDialog">
+    <form method="dialog" id="taskForm">
+      <div class="dialog-head"><h2 id="dialogTitle">添加任务</h2><button type="button" id="closeTaskDialog" class="icon-button">×</button></div>
+      <input type="hidden" id="editTaskId" />
+      <label>科目<select id="taskSubject"><option>354</option><option>445</option><option>文化</option><option>英语</option><option>政治</option><option>复盘</option><option>生活</option></select></label>
+      <label>任务<input id="taskTitle" required maxlength="100" placeholder="例如：黄廖语音章测试" /></label>
+      <div class="form-row">
+        <label>开始时间<input id="taskTime" type="time" required /></label>
+        <label>有效时长<input id="taskHours" type="number" min="0.25" max="8" step="0.25" required /></label>
+      </div>
+      <label>优先级<select id="taskPriority"><option value="3">核心：专业课主线</option><option value="2">重要：英语/政治</option><option value="1">普通：整理与补充</option></select></label>
+      <label>交付标准<input id="taskDeliverable" maxlength="120" placeholder="例如：正确率≥75%，错题归档" /></label>
+      <div class="dialog-actions"><button type="button" id="cancelTaskBtn" class="ghost-button">取消</button><button type="submit" class="primary-button" id="saveTaskBtn">保存</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" id="settingsForm">
+      <div class="dialog-head"><h2>目标设置</h2><button type="button" id="closeSettingsDialog" class="icon-button">×</button></div>
+      <label>成熟期每日容量（前两周自动按6h→7h爬坡）<input id="dailyTargetInput" type="number" min="4" max="12" step="0.5" /></label>
+      <label>成熟期每周目标（前两周自动40h→45h）<input id="weeklyTargetInput" type="number" min="20" max="80" step="1" /></label>
+      <label>初试日期<input id="examDateInput" type="date" /></label>
+      <div class="form-row three-times">
+        <label>上午开始<input id="morningStartInput" type="time" /></label>
+        <label>下午开始<input id="afternoonStartInput" type="time" /></label>
+        <label>晚上开始<input id="eveningStartInput" type="time" /></label>
+      </div>
+      <label>任务间休息（分钟）<input id="breakMinutesInput" type="number" min="5" max="60" step="5" /></label>
+      <label class="toggle-label"><input id="autoRolloverInput" type="checkbox" /> <span><strong>自动滚动未完成任务</strong><small>第二天首次打开计划时，把前一天未完成内容带到今天。</small></span></label>
+      <div class="dialog-actions"><button type="button" id="cancelSettingsBtn" class="ghost-button">取消</button><button type="submit" class="primary-button" id="saveSettingsBtn">保存</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="reviewDialog">
+    <form method="dialog" id="reviewForm">
+      <div class="dialog-head"><h2>加入背诵单元</h2><button type="button" id="closeReviewDialog" class="icon-button">×</button></div>
+      <label>科目<select id="reviewSubject"><option>354</option><option>445</option><option>文化</option><option>英语</option><option>政治</option></select></label>
+      <label>背诵单元<input id="reviewTitle" required maxlength="100" placeholder="例如：错误分析——步骤、贡献与局限" /></label>
+      <p class="dialog-tip">单元要小到能在10分钟内完成一次闭卷回忆。不要把“整本引论”作为一个单元。</p>
+      <div class="dialog-actions"><button type="button" id="cancelReviewBtn" class="ghost-button">取消</button><button type="submit" class="primary-button">加入今天</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="cultureDialog" class="culture-dialog">
+    <div class="culture-shell">
+      <div class="dialog-head"><div><p class="eyebrow">CULTURE RECALL</p><h2>文化要略背诵库</h2></div><button type="button" id="closeCultureDialog" class="icon-button">×</button></div>
+      <div class="culture-toolbar"><input id="cultureSearch" type="search" placeholder="搜索：孔子、科举、建筑……" /><select id="cultureChapter"><option value="all">全部专题</option></select><span id="cultureCount" class="muted"></span></div>
+      <div id="cultureList" class="culture-list"></div>
+    </div>
+  </dialog>
+
+  <script src="culture-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
